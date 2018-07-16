@@ -4,6 +4,7 @@ Imports System.Windows.Forms
 Imports System
 Imports DevExpress.XtraTreeList
 Imports DevExpress.XtraTreeList.Nodes
+Imports DevExpress.Utils.Drawing
 
 Namespace DXSample
     Public Class MyTreeList
@@ -14,20 +15,23 @@ Namespace DXSample
             OptionsBehavior.ShowEditorOnMouseUp = True
             OptionsSelection.EnableAppearanceFocusedCell = False
             OptionsSelection.MultiSelect = True
-            OptionsView.ShowFocusedFrame = False
+            OptionsView.FocusRectStyle = DrawFocusRectStyle.None
+            AddHandler PaintEx, AddressOf OnPaintEx
+        End Sub
+
+        Private Sub OnPaintEx(ByVal sender As Object, ByVal e As TreeListPaintEventArgs)
+            If selectedRect = Rectangle.Empty Then
+                Return
+            End If
+            e.Cache.DrawRectangle(Pens.Blue, selectedRect)
+            Using selectedBrush As New SolidBrush(Color.FromArgb(50, Color.Blue))
+                e.Cache.FillRectangle(selectedBrush, selectedRect)
+            End Using
         End Sub
 
         Private selectedRect As Rectangle = Rectangle.Empty
         Private dragRect As Rectangle = Rectangle.Empty
 
-        Protected Overrides Sub OnPaint(ByVal e As PaintEventArgs)
-            MyBase.OnPaint(e)
-            If selectedRect = Rectangle.Empty Then
-                Return
-            End If
-            e.Graphics.DrawRectangle(Pens.Blue, selectedRect)
-            e.Graphics.FillRectangle(New SolidBrush(Color.FromArgb(50, Color.Blue)), selectedRect)
-        End Sub
 
         Protected Overrides Sub OnMouseDown(ByVal e As MouseEventArgs)
             If e.Button = MouseButtons.Left Then
@@ -87,6 +91,12 @@ Namespace DXSample
                 selectedRect = Rectangle.Empty
             End If
             MyBase.OnMouseLeave(e)
+        End Sub
+        Protected Overrides Sub Dispose(ByVal disposing As Boolean)
+            If disposing Then
+                RemoveHandler PaintEx, AddressOf OnPaintEx
+            End If
+            MyBase.Dispose(disposing)
         End Sub
     End Class
 End Namespace
