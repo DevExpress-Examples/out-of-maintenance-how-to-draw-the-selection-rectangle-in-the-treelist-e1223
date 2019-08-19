@@ -1,15 +1,12 @@
-﻿Imports DevExpress.XtraEditors
-Imports System.Drawing
-Imports System.Windows.Forms
-Imports System
-Imports DevExpress.XtraTreeList
+﻿Imports DevExpress.XtraTreeList
 Imports DevExpress.XtraTreeList.Nodes
-Imports DevExpress.Utils.Drawing
 
 Namespace DXSample
     Public Class MyTreeList
         Inherits TreeList
-
+        Dim selectedRect As Rectangle = Rectangle.Empty
+        Dim dragRect As Rectangle = Rectangle.Empty
+        Dim startPoint As Point = Point.Empty
         Public Sub New()
             MyBase.New()
             OptionsBehavior.ShowEditorOnMouseUp = True
@@ -28,16 +25,12 @@ Namespace DXSample
                 e.Cache.FillRectangle(selectedBrush, selectedRect)
             End Using
         End Sub
-
-        Private selectedRect As Rectangle = Rectangle.Empty
-        Private dragRect As Rectangle = Rectangle.Empty
-
-
         Protected Overrides Sub OnMouseDown(ByVal e As MouseEventArgs)
             If e.Button = MouseButtons.Left Then
                 dragRect.X = e.X - SystemInformation.DragSize.Width \ 2
                 dragRect.Y = e.Y - SystemInformation.DragSize.Height \ 2
                 dragRect.Size = SystemInformation.DragSize
+                startPoint = e.Location
                 selectedRect.Location = e.Location
             End If
             MyBase.OnMouseDown(e)
@@ -48,7 +41,7 @@ Namespace DXSample
                 Selection.Clear()
                 For i As Integer = 0 To VisibleNodesCount - 1
                     Dim node As TreeListNode = GetNodeByVisibleIndex(i)
-                    If ViewInfo.RowsInfo(node).Bounds.IntersectsWith(selectedRect) Then
+                    If ViewInfo.RowsInfo(node) IsNot Nothing AndAlso ViewInfo.RowsInfo(node).Bounds.IntersectsWith(selectedRect) Then
                         node.Selected = True
                     End If
                 Next i
@@ -66,14 +59,14 @@ Namespace DXSample
                         Selection.Clear()
                     End If
                     Dim tmp As Rectangle = selectedRect
-                    If e.X <= selectedRect.X Then
+                    If e.X <= startPoint.X Then
                         selectedRect.X = e.X
                         selectedRect.Width += tmp.Right - selectedRect.Right
                     Else
                         selectedRect.Width = e.X - selectedRect.X
                     End If
 
-                    If e.Y <= selectedRect.Y Then
+                    If e.Y <= startPoint.Y Then
                         selectedRect.Y = e.Y
                         selectedRect.Height += tmp.Bottom - selectedRect.Bottom
                     Else
@@ -84,7 +77,6 @@ Namespace DXSample
             End If
             MyBase.OnMouseMove(e)
         End Sub
-
         Protected Overrides Sub OnMouseLeave(ByVal e As EventArgs)
             If dragRect <> Rectangle.Empty Then
                 dragRect = Rectangle.Empty
